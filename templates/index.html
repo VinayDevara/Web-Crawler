@@ -1,0 +1,82 @@
+<!-- templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Usage Monitor</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        .graph-container {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">System Usage Monitor</h1>
+        
+        <div class="row graph-container">
+            <div class="col-md-6">
+                <div id="cpu-usage" style="height: 400px;"></div>
+                <p class="text-center">CPU Usage Graph</p>
+                <p class="text-center">This graph shows the CPU usage percentage over time. Higher CPU usage may indicate active processing by the crawler.</p>
+            </div>
+            <div class="col-md-6">
+                <div id="memory-usage" style="height: 400px;"></div>
+                <p class="text-center">Memory Usage Graph</p>
+                <p class="text-center">This graph displays the memory usage percentage over time. Monitoring memory usage is crucial to ensure the crawler operates within memory limits.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var socket = io.connect('http://' + document.domain + ':' + location.port);
+
+        var cpuData = {
+            x: [],
+            y: [],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'CPU Usage'
+        };
+
+        var memoryData = {
+            x: [],
+            y: [],
+            type: 'scatter',
+            mode: 'lines',
+            name: 'Memory Usage'
+        };
+
+        var layout = {
+            title: 'System Usage',
+            xaxis: {
+                title: 'Time'
+            },
+            yaxis: {
+                title: 'Percentage (%)',
+                range: [0, 100]
+            }
+        };
+
+        Plotly.newPlot('cpu-usage', [cpuData], layout);
+        Plotly.newPlot('memory-usage', [memoryData], layout);
+
+        socket.on('system_usage', function(data) {
+            var time = new Date().toLocaleTimeString();
+            cpuData.x.push(time);
+            cpuData.y.push(data.cpu);
+
+            memoryData.x.push(time);
+            memoryData.y.push(data.memory);
+
+            Plotly.redraw('cpu-usage');
+            Plotly.redraw('memory-usage');
+        });
+    </script>
+</body>
+</html>
